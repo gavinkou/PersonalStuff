@@ -1,0 +1,101 @@
+#!/usr/bin/python
+import os,re,sys
+
+slab=os.popen("/usr/bin/slabtop -o -s c")
+
+slb_info=slab.readlines()
+slab.close()
+
+def del_suffix(d):
+    for k,v in d.iteritems():
+        if v.lower().endswith('k')  :
+            d[k]=int( float(''.join(v[:-1]))*1024 )
+        if v.lower().endswith('m')   :
+            d[k]=int( float(''.join(v[:-1]))*1024*1024 )
+        if v.lower().endswith('g') :
+            d[k]=int( float(''.join(v[:-1]))*1024*1024*1024 )
+    for k,v in d.iteritems():
+        d[k]=str(v)
+        
+r=re.match('.*: (?P<active_objects>\d+) / (?P<total_objects>\d+).*', slb_info[0])
+active_objects,total_objects=r.group('active_objects'),r.group('total_objects')
+
+r=re.match('.*: (?P<active_slabs>\d+) / (?P<total_slabs>\d+).*', slb_info[1])
+active_slabs, total_slabs = r.group('active_slabs'), r.group('total_slabs')
+
+r=re.match('.*: (?P<active_caches>\d+) / (?P<total_caches>\d+).*', slb_info[2])
+active_caches, total_caches = r.group('active_caches'), r.group('total_caches')
+
+r=re.match('.*: (?P<active_size>.+K) / (?P<total_size>.+K).*', slb_info[3])
+active_size, total_size = r.group('active_size'), r.group('total_size')
+
+r=re.match('.*: (?P<min_objects>.+K) / (?P<arv_objects>.+K) / (?P<max_objects>.+K).*', slb_info[4])
+min_objects, arv_objects,  max_objects = r.group('min_objects'), r.group('arv_objects'), r.group('max_objects')
+
+#r=re.match('.*(?P<max_slab_cache_item_size>.+K) (?P<max_slab_cache_item_name>.+K).*', slb_info[7])
+r=re.split('\s+',slb_info[7])
+max_slab_cache_item_size , max_slab_cache_item_name = r[-3],r[-2]
+
+
+# print "".join(slb_info[0:9])
+# print active_objects, total_objects
+# print active_slabs, total_slabs
+# print active_caches, total_caches
+# print active_size, total_size
+# print min_objects, arv_objects,  max_objects
+# print max_slab_cache_item_size, max_slab_cache_item_name
+
+
+d={'total_objects':total_objects,
+'active_objects':active_objects,
+'total_slabs':total_slabs,
+'active_slabs':active_slabs,
+'total_caches':total_caches,
+'active_caches':active_caches,
+'total_size':total_size,
+'active_size':active_size,
+'min_objects':min_objects,
+'arv_objects':arv_objects,
+'max_objects':max_objects,
+'max_slab_cache_item_name':max_slab_cache_item_name,
+'max_slab_cache_item_size':max_slab_cache_item_size
+}
+
+del_suffix(d)
+
+if len(sys.argv)>1 and sys.argv[1] == 'config':
+    print """graph_title Slab Stats
+graph_category Other
+graph_args --logarithmic --base 1024 -l 0 --vertical-label Bytes --upper-limit 16833585152
+total_objects.label total Objects
+active_objects.label active objects
+total_slabs.label total objects
+active_slabs.label active slabs
+total_caches.label total caches
+active_caches.label active caches
+total_size.label total size
+total_size.draw AREA
+active_size.label active size
+active_size.draw LINE2
+min_objects.label min objects
+arv_objects.label arv objects
+max_objects.label max objects
+max_slab_cache_item_size.label max slab cache item size
+max_slab_cache_item_size.draw STACK
+max_slab_cache_item_size.info the size of the max item(%(max_slab_cache_item_name)s) in SLAB
+max_slab_cache_item_name.graph no""" % d
+    sys.exit()
+
+print """total_objects.value %(total_objects)s
+active_objects.value %(active_objects)s
+total_slabs.value %(total_slabs)s
+active_slabs.value %(active_slabs)s
+total_caches.value %(total_caches)s
+active_caches.value %(active_caches)s
+total_size.value %(total_size)s
+active_size.value %(active_size)s
+min_objects.value %(min_objects)s
+arv_objects.value %(arv_objects)s
+max_objects.value %(max_objects)s
+max_slab_cache_item_name.value %(max_slab_cache_item_name)s
+max_slab_cache_item_size.value %(max_slab_cache_item_size)s""" % d
