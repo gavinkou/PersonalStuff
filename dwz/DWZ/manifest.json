@@ -1,0 +1,20 @@
+{
+  "manifest_version": 2,
+
+  "name": "短我",
+  "description": "调用dwz API生成短网址，并且自动copy到粘贴板",
+  "version": "1.0",
+	"author": "Gavin Kou<gavin.kou@gmail.com",
+	
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_popup": "popup.html",
+	 "default_title": "生成短网址"
+  },
+ 
+  "permissions": [
+    "activeTab",
+    "http://dwz.cn/",
+	"clipboardWrite"
+  ]
+}
